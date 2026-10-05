@@ -30,6 +30,14 @@ enum CiWaitVisual {
         default: return unknown
         }
     }
+    static func compactPhase(_ wait: [String: Any]?) -> Int {
+        guard let wait else { return none }
+        let id = phase(wait["phase"] as? String)
+        if id == passed || id == failed { return id }
+        guard let flag = wait["agentWaiting"] as? NSNumber,
+              CFGetTypeID(flag) == CFBooleanGetTypeID(), flag.boolValue else { return none }
+        return id
+    }
 }
 
 struct CiWaitIntent: Codable, Equatable, Sendable {
