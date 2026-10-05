@@ -1,5 +1,5 @@
 import { UI } from './design-tokens.js';
-import { CI_GITHUB_GLYPH, CI_GITHUB_GLYPH_SIZE } from './ci-github-glyph.generated.js';
+import { CI_GITHUB_GLYPH, CI_GITHUB_GLYPH_SIZE, CI_GITHUB_ALPHA, CI_GITHUB_ALPHA_SIZE } from './ci-github-glyph.generated.js';
 /** CI wait intent, never a CI result. SSOT for the staged #433 integration.
  * No I/O, cwd inference, credentials, command text or invented run identity.
  * Unsupported shell syntax fails closed; process evidence can cover it later.
@@ -305,12 +305,14 @@ export function ciWaitLabel(wait: CiWaitStatus | null | undefined): string | nul
 export const CI_WAIT_CUE = {
   cycleMs: 6000, showAfterMs: 3000,
   glyphSize: CI_GITHUB_GLYPH_SIZE, helperColor: UI.hudText,
+  standardGlyphSize: CI_GITHUB_ALPHA_SIZE,
   colors: { unknown: UI.idle, queued: UI.cyan, running: UI.cyan, passed: UI.ok, failed: UI.error },
 } as const;
 export const CI_WAIT_VISUAL = {
   none: 0, unknown: 1, queued: 2, running: 3, passed: 4, failed: 5,
   // Official GitHub Invertocat sampled from the canonical SVG, never an agent.
   github: CI_GITHUB_GLYPH,
+  githubAlpha: CI_GITHUB_ALPHA,
 } as const;
 export function ciWaitPhaseId(wait: CiWaitStatus | null | undefined): number {
   if (!wait) return CI_WAIT_VISUAL.none;

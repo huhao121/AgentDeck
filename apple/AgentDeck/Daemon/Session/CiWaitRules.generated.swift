@@ -20,8 +20,6 @@ enum CiWaitVisual {
     static let passed = 4
     static let failed = 5
     static let github: [UInt8] = [60, 126, 195, 195, 195, 231, 70, 36]
-    @available(*, deprecated, message: "Use github; this compatibility name contains the GitHub mark")
-    static let shrimp = github
     static func phase(_ value: String?) -> Int {
         switch value {
         case "unknown": return 1
