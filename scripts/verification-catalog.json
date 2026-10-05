@@ -705,7 +705,8 @@
         "scripts/__tests__/npm-registry-visibility.test.ts",
         "scripts/__tests__/native-palette.test.ts",
         "scripts/__tests__/verification-catalog.test.ts",
-        "scripts/__tests__/build-health-report.test.ts"
+        "scripts/__tests__/build-health-report.test.ts",
+        "scripts/__tests__/aquarium-showcase-story.test.ts"
       ]
     }
   ]
