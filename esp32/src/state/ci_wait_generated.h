@@ -23,4 +23,12 @@ inline uint8_t phase(const char* value) {
     if (value && !strcmp(value, "failed")) return 5;
     return UNKNOWN;
 }
+inline uint8_t compactPhase(const char* value, bool agentWaiting) {
+    const uint8_t id = phase(value);
+    return id == PASSED || id == FAILED || agentWaiting ? id : NONE;
+}
+template<typename Wait> inline uint8_t fromJsonWait(const Wait& wait) {
+    return compactPhase(wait["phase"] | "unknown",
+        wait["agentWaiting"].template is<bool>() && wait["agentWaiting"].template as<bool>());
+}
 }

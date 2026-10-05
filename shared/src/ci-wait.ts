@@ -316,6 +316,9 @@ export const CI_WAIT_VISUAL = {
 } as const;
 export function ciWaitPhaseId(wait: CiWaitStatus | null | undefined): number {
   if (!wait) return CI_WAIT_VISUAL.none;
+  // Terminal verdicts are passive evidence. A pending helper needs an explicit
+  // waiting signal; missing/false is not evidence that an agent is waiting.
+  if (wait.phase !== 'passed' && wait.phase !== 'failed' && wait.agentWaiting !== true) return CI_WAIT_VISUAL.none;
   const value = CI_WAIT_VISUAL[wait.phase];
   return typeof value === 'number' ? value : CI_WAIT_VISUAL.unknown;
 }

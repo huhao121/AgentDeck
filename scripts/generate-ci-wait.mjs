@@ -43,6 +43,14 @@ inline uint8_t phase(const char* value) {
 `).join('') +
     `    return UNKNOWN;
 }
+inline uint8_t compactPhase(const char* value, bool agentWaiting) {
+    const uint8_t id = phase(value);
+    return id == PASSED || id == FAILED || agentWaiting ? id : NONE;
+}
+template<typename Wait> inline uint8_t fromJsonWait(const Wait& wait) {
+    return compactPhase(wait["phase"] | "unknown",
+        wait["agentWaiting"].template is<bool>() && wait["agentWaiting"].template as<bool>());
+}
 }
 `;
 }
@@ -70,6 +78,14 @@ ${Object.entries(mod.CI_WAIT_VISUAL).filter(([, value]) => typeof value === 'num
 ${Object.entries(mod.CI_WAIT_VISUAL).filter(([k, value]) => typeof value === 'number' && k !== 'none').map(([k,v]) => `        case "${k}": return ${v}`).join('\n')}
         default: return unknown
         }
+    }
+    static func compactPhase(_ wait: [String: Any]?) -> Int {
+        guard let wait else { return none }
+        let id = phase(wait["phase"] as? String)
+        if id == passed || id == failed { return id }
+        guard let flag = wait["agentWaiting"] as? NSNumber,
+              CFGetTypeID(flag) == CFBooleanGetTypeID(), flag.boolValue else { return none }
+        return id
     }
 }
 
