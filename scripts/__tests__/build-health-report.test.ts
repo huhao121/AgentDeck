@@ -138,8 +138,11 @@ describe('QA decision and accounting', () => {
       } });
       const summary = JSON.parse(readFileSync(join(report, 'summary.json'), 'utf8'));
       expect(summary.decision).toBe(decision);
+<<<<<<< HEAD
       const history = JSON.parse(readFileSync(join(report, 'history.json'), 'utf8')).at(-1);
       expect(history).toMatchObject(summary.total);
+=======
+>>>>>>> origin/codex/qa-test-report-deploy
       expect(summary.total).toMatchObject({ executed, skipped, total: executed + skipped });
       const page = readFileSync(join(report, 'index.html'), 'utf8');
       expect(page).toContain(`<span class="dot ${decision}">`);
@@ -147,11 +150,20 @@ describe('QA decision and accounting', () => {
       expect(page).not.toContain('href="#coverage"');
       const ids = new Set([...page.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]));
       for (const [, target] of page.matchAll(/href="#([^"]+)"/g)) expect(ids.has(target), target).toBe(true);
+<<<<<<< HEAD
+=======
+      const history = JSON.parse(readFileSync(join(report, 'history.json'), 'utf8'));
+      expect(history.at(-1).total).toBe(summary.total.total);
+>>>>>>> origin/codex/qa-test-report-deploy
       if (all) {
         for (const name of ['e2e', 'android', 'apple', 'robot']) {
           expect(summary.suites.find((s: { name: string }) => s.name === name).status).toBe('unknown');
         }
+<<<<<<< HEAD
         expect(page).toMatch(/<h3>Apple \(XCTest\)<\/h3><span class="badge off">No case evidence<\/span>/);
+=======
+        expect(page).toMatch(/<h3>Apple \(XCTest\)<\/h3><span class="badge off"><span data-i18n="[^"]+">No case evidence<\/span><\/span>/);
+>>>>>>> origin/codex/qa-test-report-deploy
         expect(page).not.toContain('<h3>Apple (XCTest)</h3><span class="badge pass">');
       }
     } finally { rmSync(report, { recursive: true, force: true }); }
@@ -163,9 +175,15 @@ describe('QA decision and accounting', () => {
     expect(html).toContain('수동 QA가 필요한 이유');
     expect(html).toContain('BUILD_HEALTH_COVERAGE_JSON=');
     expect(html).toContain('No QA execution video is attached');
+<<<<<<< HEAD
     expect(html).toContain("document.createTreeWalker");
     expect(html).toMatch(/<html lang="en">/);
     expect(html).toContain("<h1>Test Report</h1>");
+=======
+    expect(html).toContain("node.getAttribute('data-i18n')");
+    expect(html).toMatch(/<html lang="en">/);
+    expect(html).toMatch(/<h1><span data-i18n="[^"]+">Test Report<\/span><\/h1>/);
+>>>>>>> origin/codex/qa-test-report-deploy
     expect(html).not.toContain('data-en=');
     expect(html).toContain('id="run" tabindex="-1"');
     expect(styleBlock()).toContain(':focus-visible');
@@ -205,11 +223,64 @@ describe('QA decision and accounting', () => {
       } else {
         expect(summary.total).toMatchObject({ executed: 0, skipped: 1 });
         expect(summary.decision).toBe('off');
+<<<<<<< HEAD
         expect(page).toMatch(/<h3>Android<\/h3><span class="badge off">No executed cases<\/span>/);
+=======
+        expect(page).toMatch(/<h3>Android<\/h3><span class="badge off"><span data-i18n="[^"]+">No executed cases<\/span><\/span>/);
+>>>>>>> origin/codex/qa-test-report-deploy
       }
     } finally { rmSync(report, { recursive: true, force: true }); }
   });
 
+<<<<<<< HEAD
+=======
+  it.each(['ko', 'en', 'ja', null, 'invalid'])('language choice %s changes reader copy without touching evidence', (saved) => {
+    const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
+    expect(script).toBeTruthy();
+    let change = () => {};
+    const selector = { value: 'en', addEventListener: (_event: string, fn: () => void) => { change = fn; } };
+    const key = /<h1><span data-i18n="([^"]+)">Test Report/.exec(html)![1];
+    const copy = { textContent: 'Test Report', getAttribute: () => key };
+    const document = { documentElement: { lang: 'ko' }, getElementById: () => selector,
+      querySelectorAll: (query: string) => { expect(query).toBe('[data-i18n]'); return [copy]; } };
+    runInNewContext(script!, { document, localStorage: { getItem: () => saved, setItem: () => {} } });
+    expect(copy.textContent).toBe(saved === 'ko' ? '테스트 보고서' : saved === 'ja' ? 'テストレポート' : 'Test Report');
+    expect(selector.value).toBe(saved && ['en', 'ko', 'ja'].includes(saved) ? saved : 'en');
+    expect(document.documentElement.lang).toBe(selector.value);
+    selector.value = 'en'; change();
+    expect(copy.textContent).toBe('Test Report');
+    expect(document.documentElement.lang).toBe('en');
+    selector.value = 'ko'; change();
+    expect(copy.textContent).toBe('테스트 보고서');
+    expect(document.documentElement.lang).toBe('ko');
+  });
+
+  it('provides Korean for every authored report string and preserves the Pages locale contract', () => {
+    const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)![1]!;
+    const dictionaries = JSON.parse(/var I18N = ([\s\S]*?);\n/.exec(script)![1]!);
+    const nodes = [...html.matchAll(/<span data-i18n="([^"]+)">([^<]*)<\/span>/g)].map(([, key, text]) => ({
+      key, textContent: text, getAttribute: () => key,
+    }));
+    expect(nodes.length).toBeGreaterThan(30);
+    for (const node of nodes) expect(dictionaries.ko[node.key!], node.key).toBeTruthy();
+    let change = () => {};
+    const selector = { value: 'en', addEventListener: (_event: string, fn: () => void) => { change = fn; } };
+    const document = { documentElement: { lang: 'en' }, getElementById: () => selector,
+      querySelectorAll: () => nodes };
+    const stored: Array<[string, string]> = [];
+    runInNewContext(script, { document, localStorage: { getItem: (key: string) => {
+      expect(key).toBe('agentdeck-design-locale'); return 'ko';
+    }, setItem: (key: string, value: string) => { stored.push([key, value]); } } });
+    for (const node of nodes) expect(node.textContent).toBe(dictionaries.ko[node.key!]);
+    expect(nodes.some((node) => node.textContent === '실패 — 원인 확인 필요')).toBe(true);
+    expect(nodes.some((node) => node.textContent === '수동 QA가 필요한 이유')).toBe(true);
+    selector.value = 'ja'; change();
+    expect(document.documentElement.lang).toBe('ja');
+    expect(stored.at(-1)).toEqual(['agentdeck-design-locale', 'ja']);
+    // Missing Japanese strings retain the canonical English source, as other Pages do.
+    expect(nodes.some((node) => node.textContent === 'Manual QA still needed')).toBe(true);
+  });
+>>>>>>> origin/codex/qa-test-report-deploy
 });
 
 describe('Build Health page — design rules on the generated output', () => {
@@ -263,7 +334,7 @@ describe('Build Health page — design rules on the generated output', () => {
 
 describe('Build Health page — what it states', () => {
   it('reports a failing run as failing, with the escaped failure', () => {
-    expect(html).toMatch(/class="run-chip"><span class="dot fail"><\/span>Fail/);
+    expect(html).toMatch(/class="run-chip"><span class="dot fail"><\/span><span data-i18n="[^"]+">Fail/);
     expect(html).toContain('keeps &lt;script&gt; &amp; &quot;quotes&quot; escaped');
     expect(html).toContain('expected &lt;b&gt;401&lt;/b&gt;');
     expect(html).not.toContain('<script> &');

@@ -671,6 +671,32 @@ def build_scenario_results(scenarios, vitest, android_suites, metadata):
 def _esc(text):
     return (str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
 
+<<<<<<< HEAD
+=======
+# Same per-page I18N dictionary + data-i18n contract used by the Pages surfaces.
+_I18N = {"ko": {}, "ja": {}}
+_JA_LABELS = {"Test Report": "テストレポート", "Decision first": "検証結果", "Pass": "合格", "Fail": "失敗", "Not run": "未実行", "Partial verification": "部分検証", "Passed": "合格", "Failed cases": "失敗したケース", "Skipped cases": "スキップしたケース", "Executed / collected": "実行 / 収集", "Next action": "次の対応", "No case evidence": "ケースの証拠なし", "No executed cases": "実行されたケースなし", "Latest run": "今回の実行", "What we verify": "検証範囲", "Test domains": "テスト領域", "Platforms": "プラットフォーム", "Scenarios": "シナリオ", "Coverage": "カバレッジ", "History": "履歴", "Test basis and QA judgment": "テスト根拠とQA判断"}
+_KO_LABELS = {"Pass": "통과", "Fail": "실패", "Not run": "미실행", "Partial verification": "부분 검증", "No case evidence": "케이스 증거 없음", "No executed cases": "실행된 케이스 없음", "Passed here": "이번 실행 통과", "Failed here": "이번 실행 실패", "Result": "판정", "Passed": "통과", "Failed": "실패", "Skipped": "건너뜀", "Summed test time": "테스트 시간 합계", "Line coverage": "줄 커버리지", "Files": "파일", "Suites": "suite", "Time": "시간", "TypeScript packages": "TypeScript 패키지", "excluded from executed tests": "실행 수에서 제외", "not wall-clock runtime": "실제 경과 시간이 아님", "across every suite run here": "이 실행의 전체 suite", "TypeScript unit, contract and integration tests.": "TypeScript 단위·계약·통합 테스트.", "The real daemon process, driven from outside.": "외부에서 제어하는 실제 daemon 프로세스.", "macOS app and in-process Swift daemon.": "macOS 앱과 앱 내부 Swift daemon.", "Flash, boot and serial protocol on real boards.": "실제 보드의 flash·부팅·serial 프로토콜."}
+
+def _copy(en, ko, ja=None):
+    """English source DOM; translate authored copy, preserve raw evidence."""
+    key = f"copy-{len(_I18N['ko'])}"
+    _I18N["ko"][key] = ko
+    japanese = ja or _JA_LABELS.get(en)
+    if japanese:
+        _I18N["ja"][key] = japanese
+    return f'<span data-i18n="{key}">{_esc(en)}</span>'
+
+def _label(text):
+    executed = re.fullmatch(r"([0-9,]+) tests executed", text)
+    if executed:
+        return _copy(text, f"{executed[1]}개 테스트 실행")
+    ratio = re.fullmatch(r"([0-9.]+)% of executed", text)
+    if ratio:
+        return _copy(text, f"실행 수 중 {ratio[1]}%")
+    return _copy(text, _KO_LABELS[text]) if text in _KO_LABELS else _esc(text)
+
+>>>>>>> origin/codex/qa-test-report-deploy
 def result_counts(vitest, android, robot):
     assertions = [a for r in (vitest or {}).get("testResults", []) for a in r.get("assertionResults", [])]
     passed = sum(a.get("status") == "passed" for a in assertions) + sum(s["passed"] for s in android) + (robot or {}).get("passed", 0)
@@ -736,6 +762,7 @@ _DECISION_LABEL = {"pass": "Pass", "fail": "Fail", "off": "Not run", "partial": 
 
 def _render_qa_summary(counts, metadata):
     decision = run_decision(counts, metadata)
+<<<<<<< HEAD
     missing = [name for name in ("vitest", "e2e", "android", "apple", "robot") if not suite_meta(metadata, name)["executed"] or suite_meta(metadata, name)["status"] == "unknown" or name not in counts["available_suites"]]
     action = (_esc("Inspect failed cases and suite notes, fix the cause, then rerun the same scope.") if decision == "fail" else
               _esc("Run missing suites and review manual QA before a release decision."))
@@ -776,13 +803,61 @@ def _render_qa_method(vt_file_data, include_scenarios=True):
       <p><a href="{_esc(source)}/bridge/src/__tests__/http-auth-gate.test.ts">http-auth-gate.test.ts</a> · <a href="#domains">{_esc("Observed results")}</a>{scenario_link}</p>
       <details class="card files"><summary>{_esc("Reproduce: inputs → execution → evaluation → report")}</summary>
         <p>{_esc("Use Node 22, 24 or 26, locked pnpm dependencies and a POSIX shell. In a fresh checkout, collect a focused public example; JSON results feed the report. This is a narrow example, not full acceptance. Coverage and native evidence require separate runs.")}</p>
+=======
+    labels = {"pass": "입력된 자동 테스트 통과", "fail": "실패 — 원인 확인 필요", "off": "미실행 — 판단 근거 없음", "partial": "부분 검증 — 실행 범위만 통과"}
+    missing = [name for name in ("vitest", "e2e", "android", "apple", "robot") if not suite_meta(metadata, name)["executed"] or suite_meta(metadata, name)["status"] == "unknown" or name not in counts["available_suites"]]
+    action = (_copy("Inspect failed cases and suite notes, fix the cause, then rerun the same scope.", "실패 케이스와 suite 메모에서 원인을 확인하고 수정 후 같은 범위를 재실행하세요.") if decision == "fail" else
+              _copy("Run missing suites and review manual QA before a release decision.", "누락된 suite와 수동 QA를 확인한 뒤 릴리스를 판단하세요."))
+    return f'''<section id="qa-summary" tabindex="-1" class="card qa-summary" aria-labelledby="qa-title">
+      <h2 id="qa-title">{_copy("Decision first", "검증 결론부터")}</h2>
+      <p><strong>{_copy(_DECISION_LABEL[decision], labels[decision])}</strong></p>
+      <dl class="specs">
+        <div><dt>{_copy("Passed", "통과")}</dt><dd>{counts["passed"]:,}</dd></div>
+        <div><dt>{_copy("Failed cases", "실패 케이스")}</dt><dd>{counts["failed"]:,}</dd></div>
+        <div><dt>{_copy("Skipped cases", "건너뛴 케이스")}</dt><dd>{counts["skipped"]:,}</dd></div>
+        <div><dt>{_copy("Executed / collected", "실행 / 수집")}</dt><dd>{counts["executed"]:,} / {counts["total"]:,}</dd></div>
+      </dl>
+      <p>{_copy("Not run or no parsed case evidence here", "이 실행에서 미실행 또는 케이스 근거 없음")}: {_esc(", ".join(missing) or "—")}.</p>
+      <p>{_copy("Remaining risk: mocked inputs do not prove physical readability, real permission flows or device recovery. Evidence from other runs keeps its own commit and date.", "잔여 위험: 모의 입력으로 실제 화면 가독성·권한 흐름·기기 복구를 증명할 수 없습니다. 다른 실행의 증거는 해당 커밋과 날짜로 구분합니다.")}</p>
+      <p><strong>{_copy("Next action", "다음 행동")}</strong>: {action} <a href="#qa-method">{_copy("Method and manual QA", "검증 방법·수동 QA")}</a></p>
+      <details><summary>{_copy("Input scope and counting rules", "입력 범위·집계 기준")}</summary>
+      <p class="fine">{_copy("Run profile", "실행 프로필")}: {_esc(metadata.get("run_profile", "unknown"))} · <a href="summary.json">summary.json</a></p>
+      <p>{_copy("Parsed input scope", "결과 입력 범위")}: {_esc(", ".join(counts["available_suites"]) or "—")}. {_copy("Only supplied cases are counted; this is not release approval.", "입력된 케이스만 집계하며 릴리스 승인은 아닙니다.")}</p>
+      <p class="fine">{_copy("Setup errors or coverage failures can fail a suite with zero failed cases. Skipped cases are excluded from executed tests.", "준비 오류·커버리지 미달은 실패 케이스가 0이어도 suite 실패입니다. 건너뛴 케이스는 실행 분모에서 제외합니다.")}</p></details>
+    </section>'''
+
+def _render_qa_method(vt_file_data):
+    source = "https://github.com/puritysb/AgentDeck/blob/" + (os.environ.get("GITHUB_SHA") or "master")
+    example = next((data for path, data in vt_file_data.items() if path.endswith("/http-auth-gate.test.ts")), None)
+    observed = (_copy(f'Example cases: {example["passed"]} passed, {example["failed"]} failed, {example["skipped"]} skipped.',
+                      f'이번 실행 예시 결과: {example["passed"]} 통과, {example["failed"]} 실패, {example["skipped"]} 건너뜀.') if example else
+                _copy("No case evidence for this example in the supplied inputs.", "현재 입력에는 이 예시의 케이스 증거가 없습니다."))
+    cards = [
+      ("Why automate?", "왜 자동화하나요?", "Repeated state transitions, access boundaries and protocol mirrors have deterministic expectations. Fast regression tests are appropriate; scenario gaps show what remains unproven.", "상태 전이·접근 경계·프로토콜 미러는 기대 결과가 명확하고 반복됩니다. 회귀 검증을 자동화하고 시나리오 공백으로 남은 위험을 드러냅니다."),
+      ("Manual QA still needed", "수동 QA가 필요한 이유", "On the target app and device, observe real permission approval/denial, disconnect/reconnect and text readability. Compare expected state/options with the screen; record app/firmware version, device, date, result and evidence. Not executed by this report.", "대상 앱·실기기에서 실제 권한 승인/거절·연결 끊김/복구·글자 가독성을 관찰하세요. 기대 상태·옵션을 화면과 비교하고 앱/펌웨어 버전·기기·날짜·결과·증거를 기록하세요. 이 보고서는 해당 검증을 실행하지 않습니다."),
+      ("Public test example", "공개 가능한 실제 예시", "Risk: unauthenticated LAN access. Input: unauthorized GET /status. Expected: deny; GET /health exposes public health only. Inspect the access-control cases in Test domains when they are included in this run. Unit inputs do not prove a physical network or UI.", "위험: 미인증 LAN 접근. 입력: 미인증 GET /status. 기대: deny, GET /health는 공개 상태만 제공. 이번 실행에 포함된 경우 테스트 영역에서 접근 제어 assertion 결과를 확인하세요. 단위 입력으로 실제 네트워크·UI까지 증명하지 않습니다."),
+      ("AI and evidence limits", "AI 사용과 증거의 한계", "Aggregation uses deterministic parsers, not an LLM verdict. Mock hooks do not assess model quality or hallucinations. Review AI-authored code and regression results; missing evidence stays unknown. Only public AgentDeck sources and synthetic fixtures belong here; confidential cases are excluded even when blurred.", "집계는 결정적 파서를 사용하며 LLM 판정이 아닙니다. 모의 hook으로 모델 품질·환각을 검증하지 않습니다. AI 작성 코드는 소스 검토·회귀 검증이 필요하고 증거 누락은 미확인입니다. 공개 AgentDeck 소스·합성 fixture만 사용하며 기밀 TC는 블러 처리해도 공개하지 않습니다."),
+    ]
+    rendered = "".join(f'<article class="card gap"><h3>{_copy(en, ko)}</h3><p>{_copy(body_en, body_ko)}</p></article>' for en, ko, body_en, body_ko in cards)
+    return f'''<section id="qa-method" tabindex="-1"><h2>{_copy("Test basis and QA judgment", "테스트 근거와 QA 판단")}</h2>
+      <div class="grid gaps">{rendered}</div>
+      <p>{observed}</p>
+      <p><a href="{_esc(source)}/bridge/src/__tests__/http-auth-gate.test.ts">http-auth-gate.test.ts</a> · <a href="#domains">{_copy("Observed results", "실제 결과")}</a> · <a href="#scenarios">{_copy("Scenario basis and gaps", "시나리오 테스트 베이스·공백")}</a></p>
+      <details class="card files"><summary>{_copy("Reproduce: inputs → execution → evaluation → report", "재현: 입력·환경 → 실행 → 평가 → 보고서")}</summary>
+        <p>{_copy("Use Node 22, 24 or 26, locked pnpm dependencies and a POSIX shell. In a fresh checkout, collect a focused public example; JSON results feed the report. This is a narrow example, not full acceptance. Coverage and native evidence require separate runs.", "Node 22·24·26과 lockfile의 pnpm 의존성, POSIX shell을 사용하세요. 새 checkout에서 공개 예시를 실행하고 JSON 결과를 보고서에 공급합니다. 좁은 범위의 예시이며 전체 인수 검증은 아닙니다. 커버리지·네이티브 증거는 별도 실행이 필요합니다.")}</p>
+>>>>>>> origin/codex/qa-test-report-deploy
         <p class="cmd"><code>pnpm install --frozen-lockfile
 pnpm build
 example_dir=$(mktemp -d)
 pnpm vitest run bridge/src/__tests__/http-auth-gate.test.ts --reporter=json --outputFile="$example_dir/vitest.json"
 BUILD_HEALTH_REPORT_DIR="$example_dir" BUILD_HEALTH_COVERAGE_JSON="$example_dir/no-coverage" BUILD_HEALTH_ANDROID_DIR="$example_dir/no-android" python3 scripts/generate-html-report.py</code></p>
+<<<<<<< HEAD
         <p><a href="{_esc(source)}/.github/workflows/test-report.yml">{_esc("Published pipeline")}</a> · <a href="summary.json">summary.json</a> · <a href="run-metadata.json">{_esc("Run scope and suite notes")}</a></p>
         <p>{_esc("Troubleshooting: HTML previously counted pass+fail while summary.json included skips. Both now use the same assertions; regression fixtures exercise skip-only runs, suite errors and missing suites. Focused results cannot substitute for release/device evidence. No QA execution video is attached to this run.")}</p>
+=======
+        <p><a href="{_esc(source)}/.github/workflows/test-report.yml">{_copy("Published pipeline", "게시 파이프라인")}</a> · <a href="summary.json">summary.json</a> · <a href="run-metadata.json">{_copy("Run scope and suite notes", "실행 범위·suite 메모")}</a></p>
+        <p>{_copy("Troubleshooting: HTML previously counted pass+fail while summary.json included skips. Both now use the same assertions; regression fixtures exercise skip-only runs, suite errors and missing suites. Focused results cannot substitute for release/device evidence. No QA execution video is attached to this run.", "트러블슈팅: 기존 HTML은 통과+실패만, summary.json은 skip도 집계했습니다. 이제 같은 assertion으로 양쪽 수치를 생성하고 skip만 있는 실행·suite 오류·미실행을 회귀 fixture로 검증합니다. 좁은 결과로 릴리스·실기기 증거를 대체할 수 없습니다. 이 실행에 첨부된 QA 검증 영상은 없습니다.")}</p>
+>>>>>>> origin/codex/qa-test-report-deploy
       </details></section>'''
 
 def _state(status):
@@ -797,7 +872,7 @@ _STATE_LABEL = {"pass": "Pass", "fail": "Fail", "off": "Not run"}
 
 def status_badge(status, label=None):
     st = _state(status)
-    return f'<span class="badge {st}">{_esc(label or _STATE_LABEL[st])}</span>'
+    return f'<span class="badge {st}">{_label(label or _STATE_LABEL[st])}</span>'
 
 def _n(count, noun):
     return f"{count:,} {noun}" + ("" if count == 1 else "s")
@@ -949,8 +1024,26 @@ def render_gnb_css():
     return re.sub(r"/\*[\s\S]*?\*/\s*", "", css, count=1).rstrip()
 
 def _section_head(sid, kicker, title, lede):
+<<<<<<< HEAD
     return f'''<div class="section-head" id="{sid}" tabindex="-1">
       <div><p class="kicker">{_esc(kicker)}</p><h2>{_esc(title)}</h2></div>
+=======
+    titles = {"Latest run": "이번 실행", "What we verify": "무엇을 검증하나요", "Test domains": "테스트 영역", "Platforms": "플랫폼별 결과", "Scenarios": "사용자 시나리오", "Coverage": "커버리지", "History": "이력"}
+    title_copy = _copy(title, titles.get(title, title))
+    ledes = {
+        "run": "이 보고서에 입력된 실행 결과입니다. macOS·실기기 등 다른 실행의 증거는 별도로 표시하며 통과 수에 합산하지 않습니다.",
+        "verify": "각 검증의 실행 환경·증명하는 범위·증명하지 못하는 범위를 canonical 검증 catalog에서 가져옵니다.",
+        "domains": "검증 질문별 TypeScript·E2E 결과입니다. 영역을 열면 파일·개별 테스트·실패 원인을 확인할 수 있습니다.",
+        "platforms": "TypeScript 이외의 네이티브·하드웨어 검증입니다. 다른 workflow와 실험실 증거는 자체 커밋·날짜로 표시합니다.",
+        "scenarios": "파일·케이스명으로 사용자 흐름을 실제 결과와 연결합니다. 숫자는 매핑 항목 수이며 assertion 수와 다릅니다. 대시는 해당 수준의 매핑 없음입니다.",
+        "coverage": "TypeScript 줄·문장·함수·분기 커버리지입니다. vitest.config.ts의 기준을 읽으며 실기기 품질까지 의미하지 않습니다.",
+        "history": "최근 실행의 수집 테스트·통과·커버리지 추이입니다. skip은 수집 수에 포함되며 실행 수에서는 제외합니다.",
+    }
+    if sid in ledes:
+        lede = _copy(re.sub(r"<[^>]+>", "", lede), ledes[sid])
+    return f'''<div class="section-head" id="{sid}" tabindex="-1">
+      <div><p class="kicker">{_esc(kicker)}</p><h2>{title_copy}</h2></div>
+>>>>>>> origin/codex/qa-test-report-deploy
       <p>{lede}</p>
     </div>'''
 
@@ -991,9 +1084,9 @@ def _render_skipped(rows):
 
 def _render_run(stats, suites, skipped_html=""):
     tiles = "".join(f'''<div class="card tile">
-        <p class="kicker">{_esc(label)}</p>
-        <p class="tile-value {cls}">{value}</p>
-        <p class="fine">{note}</p>
+        <p class="kicker">{_label(label)}</p>
+        <p class="tile-value {cls}">{_label(str(value))}</p>
+        <p class="fine">{_label(note)}</p>
       </div>''' for label, value, cls, note in stats)
     cards = ""
     for s in suites:
@@ -1001,22 +1094,30 @@ def _render_run(stats, suites, skipped_html=""):
         st = _state(meta["status"]) if meta["executed"] else "off"
         if st == "pass" and not (s["passed"] + s["failed"]):
             st = "off"
+<<<<<<< HEAD
         elsewhere = None if meta["executed"] else s.get("elsewhere")
         badge = _elsewhere_badge(elsewhere) if elsewhere else status_badge(st, "No case evidence" if meta["executed"] and st == "off" else None)
+=======
+        badge = status_badge(st, "No case evidence" if meta["executed"] and st == "off" else None)
+>>>>>>> origin/codex/qa-test-report-deploy
         figures = ""
         if meta["executed"]:
             figures = f'''<dl class="specs">
-              <div><dt>Passed</dt><dd>{s["passed"]:,}</dd></div>
-              <div><dt>Failed</dt><dd class="{"bad-text" if s["failed"] else ""}">{s["failed"]:,}</dd></div>
-              <div><dt>{_esc(s["unit"])}</dt><dd>{s["files"]:,}</dd></div>
-              <div><dt>Time</dt><dd>{duration_fmt(s["ms"]) if s["ms"] else "—"}</dd></div>
+              <div><dt>{_label("Passed")}</dt><dd>{s["passed"]:,}</dd></div>
+              <div><dt>{_label("Failed")}</dt><dd class="{"bad-text" if s["failed"] else ""}">{s["failed"]:,}</dd></div>
+              <div><dt>{_label(s["unit"])}</dt><dd>{s["files"]:,}</dd></div>
+              <div><dt>{_label("Time")}</dt><dd>{duration_fmt(s["ms"]) if s["ms"] else "—"}</dd></div>
             </dl>'''
         note = f'<p class="fine">{_esc(meta["note"])}</p>' if meta.get("note") else ""
         if elsewhere:
             note += elsewhere["line"]
         cards += f'''<article class="card suite">
           <div class="card-top"><h3>{_esc(s["name"])}</h3>{badge}</div>
+<<<<<<< HEAD
           <p class="sub">{_esc(s["what"])}</p>
+=======
+          <p class="sub">{_label(s["what"])}</p>
+>>>>>>> origin/codex/qa-test-report-deploy
           {_bar(s["passed"], s["failed"], s["passed"] + s["failed"]) if meta["executed"] else ""}
           {figures}{note}
         </article>'''
@@ -1230,7 +1331,8 @@ def _test_rows(assertions):
         if st == "fail" and a.get("failureMessages"):
             detail = f'<pre class="failure">{_esc(a["failureMessages"][0][:2000])}</pre>'
         dur = a.get("duration")
-        rows += (f'<li class="t {st}"><span class="mark" aria-label="{_STATE_LABEL[st]}">{mark}</span>'
+        case_label = "Skipped" if a.get("status") in ("skipped", "pending", "todo") else _STATE_LABEL[st]
+        rows += (f'<li class="t {st}"><span class="mark" aria-label="{case_label}">{mark}</span>'
                  f'<span class="tname">{_esc(name)}</span>'
                  f'<span class="tdur">{duration_fmt(dur) if dur else ""}</span>{detail}</li>')
     return rows
@@ -1257,10 +1359,10 @@ def _render_domains(vt_file_data):
           <p class="sub">{_esc(layer.get("question", ""))}</p>
           {_bar(passed, failed, passed + failed)}
           <dl class="specs">
-            <div><dt>Passed</dt><dd>{passed:,}</dd></div>
-            <div><dt>Failed</dt><dd class="{"bad-text" if failed else ""}">{failed:,}</dd></div>
-            <div><dt>Skipped</dt><dd>{skipped:,}</dd></div>
-            <div><dt>Time</dt><dd>{duration_fmt(dur)}</dd></div>
+            <div><dt>{_label("Passed")}</dt><dd>{passed:,}</dd></div>
+            <div><dt>{_label("Failed")}</dt><dd class="{"bad-text" if failed else ""}">{failed:,}</dd></div>
+            <div><dt>{_label("Skipped")}</dt><dd>{skipped:,}</dd></div>
+            <div><dt>{_label("Time")}</dt><dd>{duration_fmt(dur)}</dd></div>
           </dl>
           <details class="files"{" open" if failed else ""}><summary>{_n(len(files), "test file")}</summary>{items}</details>
         </article>'''
@@ -1299,8 +1401,13 @@ def _render_platforms(android_suites, android_meta, apple_meta, robot, robot_met
           <p class="sub">{_esc(android_meta.get("note") or "No JUnit results in this run.")}</p></article>'''
     # Apple
     apple = f'''<article class="card platform">
+<<<<<<< HEAD
       <div class="card-top"><h3>Apple (XCTest)</h3>{_elsewhere_badge(apple_elsewhere) if apple_elsewhere and not apple_meta["executed"] else status_badge(_state(apple_meta["status"]) if apple_meta["executed"] else "off", "No case evidence" if apple_meta["executed"] and _state(apple_meta["status"]) == "off" else None)}</div>
       <p class="sub">{_esc(apple_meta.get("note") or "Runs in the Apple Tests workflow on a macOS runner.")}</p>{apple_elsewhere["line"] if apple_elsewhere and not apple_meta["executed"] else ""}</article>'''
+=======
+      <div class="card-top"><h3>Apple (XCTest)</h3>{status_badge(_state(apple_meta["status"]) if apple_meta["executed"] else "off", "No case evidence" if apple_meta["executed"] and _state(apple_meta["status"]) == "off" else None)}</div>
+      <p class="sub">{_esc(apple_meta.get("note") or "Runs in the Apple Tests workflow on a macOS runner.")}</p></article>'''
+>>>>>>> origin/codex/qa-test-report-deploy
     # Robot
     if robot:
         suites = ""
@@ -1389,6 +1496,7 @@ def _render_coverage(cov_total, pkg_cov):
 
 # --- Page --------------------------------------------------------------------
 
+<<<<<<< HEAD
 def _apple_elsewhere(workflow_status, commit):
     run = workflow_status.get(".github/workflows/apple-test.yml")
     if not run:
@@ -1409,6 +1517,11 @@ def _robot_elsewhere(recorded):
 
 def generate_html(vitest, android_suites, cov_data, scenarios, scenario_results, history, metadata, robot=None,
                   workflow_status=None, recorded=None, this_run=None):
+=======
+def generate_html(vitest, android_suites, cov_data, scenarios, scenario_results, history, metadata, robot=None):
+    _I18N["ko"].clear()
+    _I18N["ja"].clear()
+>>>>>>> origin/codex/qa-test-report-deploy
     metadata = reconcile_case_evidence(metadata, vitest, android_suites, robot)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     commit = os.environ.get("GITHUB_SHA", "")[:7]
@@ -1456,12 +1569,20 @@ def generate_html(vitest, android_suites, cov_data, scenarios, scenario_results,
     pkg_cov = extract_package_coverage(cov_data) if cov_data else {}
 
     stats = [
+<<<<<<< HEAD
         ("Result", _DECISION_LABEL[overall], "ok-text" if overall == "pass" else ("bad-text" if overall == "fail" else ""),
+=======
+        ("Result", _DECISION_LABEL[overall], "ok-text" if overall == "pass" else "bad-text" if overall == "fail" else "quiet",
+>>>>>>> origin/codex/qa-test-report-deploy
          f"{total_all:,} tests executed"),
         ("Passed", f"{total_passed:,}", "", f"{(total_passed / total_all * 100) if total_all else 0:.2f}% of executed"),
         ("Failed", f"{total_failed:,}", "bad-text" if total_failed else "", "across every suite run here"),
         ("Skipped", f'{counts["skipped"]:,}', "", "excluded from executed tests"),
+<<<<<<< HEAD
         ("Cumulative test time", duration_fmt(vt_ms + e2_ms + an_ms), "", "summed per-file test time"),
+=======
+        ("Summed test time", duration_fmt(vt_ms + e2_ms + an_ms), "", "not wall-clock runtime"),
+>>>>>>> origin/codex/qa-test-report-deploy
         ("Line coverage", f"{lines_pct:.1f}%" if cov_data else "—", "", "TypeScript packages"),
     ]
     suites = [
@@ -1498,8 +1619,16 @@ def generate_html(vitest, android_suites, cov_data, scenarios, scenario_results,
         sections = [s for s in sections if s[0] != "coverage"]
     if not scenario_results:
         sections = [s for s in sections if s[0] != "scenarios"]
+<<<<<<< HEAD
     sections += [("qa-method", "Method / manual QA", "")]
     jump = "".join(f'<a href="#{sid}">{_esc(title)}</a>' for sid, title, _ in sections)
+=======
+    if not cov_data:
+        sections = [s for s in sections if s[0] != "coverage"]
+    sections += [("qa-method", "Method / manual QA", "")]
+    jump_labels = {"run": "이번 실행", "verify": "검증 범위", "domains": "테스트 영역", "platforms": "플랫폼", "scenarios": "시나리오", "coverage": "커버리지", "history": "이력", "qa-method": "검증 방법·수동 QA"}
+    jump = "".join(f'<a href="#{sid}">{_copy(title, jump_labels[sid])}</a>' for sid, title, _ in sections)
+>>>>>>> origin/codex/qa-test-report-deploy
 
     body = ""
     body += f'<section>{_section_head("run", "Build health", "Latest run", "What this page ran on the merged master commit. Suites that need a macOS runner or physical boards run elsewhere and are marked as not run here — never counted as passing.")}{_render_run(stats, suites, _render_skipped(_skipped_cases(vt_file_data, CATALOG)))}</section>'
@@ -1513,7 +1642,11 @@ def generate_html(vitest, android_suites, cov_data, scenarios, scenario_results,
         body += f'<section>{_section_head("coverage", "Vitest --coverage", "Coverage", "Line, statement, function and branch coverage of bridge, shared, plugin and hooks. The floors are read from <code>vitest.config.ts</code> and enforced on every pull request.")}{_render_coverage(cov_total, pkg_cov)}</section>'
     body += f'<section>{_section_head("history", "Trend", "History", "Totals from the last runs of this page on master.")}{history_html}</section>'
 
+<<<<<<< HEAD
     body += _render_qa_method(vt_file_data, bool(scenario_results))
+=======
+    body += _render_qa_method(vt_file_data)
+>>>>>>> origin/codex/qa-test-report-deploy
 
     commit_bit = f" · commit {_esc(commit)}" if commit else ""
     translations = _load_json(ROOT / "scripts" / "report-locales" / "ko.json", {})
@@ -1704,9 +1837,15 @@ footer {{ max-width:var(--container-max); margin:0 auto; padding:var(--s-10) var
 <main class="wrap">
   <header>
     <p class="kicker">AgentDeck · Build health</p>
+<<<<<<< HEAD
     <h1>Test Report</h1>
     <p class="lede">Review the decision, remaining risk and next action first; inspect the exact test evidence below.</p>
     <p class="run-chip"><span class="dot {overall}"></span>{_DECISION_LABEL[overall]} · {total_all:,} tests{commit_bit} · generated {now}</p>
+=======
+    <h1>{_copy("Test Report", "테스트 보고서")}</h1>
+    <p class="lede">{_copy("Review the decision, remaining risk and next action first; inspect the exact test evidence below.", "현재 판정·잔여 위험·다음 행동을 먼저 확인하고, 아래에서 구체적인 테스트 증거를 검토하세요.")}</p>
+    <p class="run-chip"><span class="dot {overall}"></span>{_label(_DECISION_LABEL[overall])} · {_copy(f"{total_all:,} tests{commit_bit} · generated {now}", f"{total_all:,}개 실행{commit_bit} · 생성 {now}")}</p>
+>>>>>>> origin/codex/qa-test-report-deploy
   </header>
   {_render_qa_summary(counts, metadata)}
   <nav class="jump" aria-label="Sections">{jump}</nav>
@@ -1717,7 +1856,35 @@ footer {{ max-width:var(--container-max); margin:0 auto; padding:var(--s-10) var
   Machine-readable: <a href="summary.json">summary.json</a> · <a href="run-metadata.json">run-metadata.json</a> · <a href="history.json">history.json</a> · <a href="verification-catalog.json">verification-catalog.json</a>.
 </footer>
 <script>
+<<<<<<< HEAD
 {locale_script}
+=======
+// Pages-compatible locale selection: saved choice, then English; no browser sniffing.
+(function () {{
+  var el = document.getElementById('lang');
+  if (!el) return;
+  var KEY = 'agentdeck-design-locale';
+  var I18N = {json.dumps(_I18N, ensure_ascii=False, indent=2).replace('<', chr(92) + 'u003c').replace('>', chr(92) + 'u003e').replace('&', chr(92) + 'u0026')};
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('[data-i18n]'));
+  var original = new Map();
+  nodes.forEach(function (node) {{ original.set(node, node.textContent); }});
+  function apply(locale) {{
+    document.documentElement.lang = locale;
+    nodes.forEach(function (node) {{
+      var key = node.getAttribute('data-i18n');
+      node.textContent = (I18N[locale] && I18N[locale][key]) || original.get(node);
+    }});
+  }}
+  var saved = 'en';
+  try {{
+    saved = localStorage.getItem(KEY) || 'en';
+    if (['en', 'ko', 'ja'].indexOf(saved) < 0) saved = 'en';
+  }} catch (e) {{}}
+  el.value = saved;
+  apply(saved);
+  el.addEventListener('change', function () {{ apply(el.value); try {{ localStorage.setItem(KEY, el.value); }} catch (e) {{}} }});
+}})();
+>>>>>>> origin/codex/qa-test-report-deploy
 </script>
 </body>
 </html>
@@ -1748,7 +1915,11 @@ def main():
     # Build scenario cross-reference
     scenario_results = build_scenario_results(scenarios, vitest, android, metadata) if scenarios else []
 
+<<<<<<< HEAD
     # The same parsed assertions feed HTML, summary and history.
+=======
+    # One counting source for the HTML, summary and history.
+>>>>>>> origin/codex/qa-test-report-deploy
     counts = result_counts(vitest, android, robot)
     total_passed, total_failed, total_all = counts["passed"], counts["failed"], counts["total"]
     cov_total = cov.get("total", {}) if cov else {}
@@ -1758,8 +1929,12 @@ def main():
     history = update_history(history, total_passed, total_failed, total_all, lines_pct, metadata)
 
     write_summary(metadata, total_passed, total_failed, total_all, counts)
+<<<<<<< HEAD
     html = generate_html(vitest, android, cov, scenarios, scenario_results, history, metadata, robot,
                          load_workflow_status(), load_recorded_receipt(), load_this_run_receipt())
+=======
+    html = generate_html(vitest, android, cov, scenarios, scenario_results, history, metadata, robot)
+>>>>>>> origin/codex/qa-test-report-deploy
     OUTPUT_HTML.write_text(html, encoding="utf-8")
     print(f"HTML report: {OUTPUT_HTML}")
 
