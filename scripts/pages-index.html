@@ -219,6 +219,11 @@
     background: var(--tide-100); border-top: 1px solid var(--tide-200); text-align: left;
   }
 
+  .showcase-media video { aspect-ratio: auto; }
+  .showcase-stills { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--s-4); }
+  .showcase-stills .hero-shot { margin-top: var(--s-4); }
+  .showcase-stills img { aspect-ratio: auto; height: auto; }
+
   /* ── Section ── */
   h2 { font-size: clamp(30px, 4vw, 44px); letter-spacing: -0.02em; margin: var(--s-20) 0 var(--s-2); }
   .section-lede { color: var(--ink-500); max-width: 60ch; margin: 0 0 var(--s-6); }
@@ -357,6 +362,26 @@
       <figcaption data-i18n="hero.caption">One daemon across the desk. Photographed September 28, 2026; open the photo for the full setup.</figcaption>
     </figure>
   </header>
+
+  <section id="showcase-180" aria-labelledby="showcase-title">
+    <h2 id="showcase-title" data-i18n="showcase.h">More agents, one living workspace</h2>
+    <p class="section-lede" data-i18n="showcase.p">Hermes Agent joins the aquarium. GitHub CI companions orbit the sessions waiting for checks, then leave when checks finish.</p>
+    <figure class="hero-shot showcase-media">
+      <video controls playsinline preload="none" poster="media/aquarium-180-overview.jpg" aria-describedby="showcase-caption">
+        <source src="media/aquarium-180-showcase.mp4" type="video/mp4">
+        <track kind="captions" src="media/aquarium-180.en.vtt" srclang="en" label="English" default>
+        <track kind="captions" src="media/aquarium-180.ko.vtt" srclang="ko" label="한국어">
+        <track kind="captions" src="media/aquarium-180.ja.vtt" srclang="ja" label="日本語">
+        <a href="media/aquarium-180-showcase.mp4" data-i18n="showcase.download">Download the 1.8.0 showcase</a>
+      </video>
+      <figcaption id="showcase-caption" data-i18n="showcase.caption">AgentDeck 1.8.0, recorded in the native iPad simulator with fictional activity. Real app rendering; silent video. The earlier introduction above is retained.</figcaption>
+    </figure>
+    <div class="showcase-stills">
+      <figure class="hero-shot"><a href="media/aquarium-180-overview.jpg"><img src="media/aquarium-180-overview.jpg" alt="Native AgentDeck 1.8.0 aquarium with Hermes Agent and multiple coding agents" loading="lazy"></a><figcaption data-i18n="showcase.overview">Hermes Agent alongside the coding agents.</figcaption></figure>
+      <figure class="hero-shot"><a href="media/aquarium-180-ci.jpg"><img src="media/aquarium-180-ci.jpg" alt="GitHub CI companion orbiting a session waiting for checks" loading="lazy"></a><figcaption data-i18n="showcase.ci">GitHub CI waiting stays attached to its session.</figcaption></figure>
+      <figure class="hero-shot"><a href="media/aquarium-180-complete.jpg"><img src="media/aquarium-180-complete.jpg" alt="Native aquarium after the fictional checks finish" loading="lazy"></a><figcaption data-i18n="showcase.complete">Checks finish and the aquarium settles.</figcaption></figure>
+    </div>
+  </section>
 
   <h2 data-i18n="aquarium.h">Your agents, in view</h2>
   <p class="section-lede" data-i18n="aquarium.p">Choose a dashboard that fits your screen and the way you work. Existing appearance choices stay yours.</p>
@@ -500,6 +525,14 @@
   (function () {
     var I18N = {
       ko: {
+        "showcase.h": "더 다양한 에이전트, 하나의 작업 공간",
+        "showcase.p": "Hermes Agent가 수족관에 합류합니다. GitHub CI 크리처는 검증을 기다리는 세션 주위를 공전하고, 검증이 끝나면 떠납니다.",
+        "showcase.download": "1.8.0 소개 영상 다운로드",
+        "showcase.caption": "가상의 작업으로 네이티브 iPad 시뮬레이터에서 촬영한 AgentDeck 1.8.0입니다. 실제 앱 렌더링이며 무음 영상입니다. 위의 기존 소개 영상도 유지했습니다.",
+        "showcase.overview": "코딩 에이전트들과 함께하는 Hermes Agent.",
+        "showcase.ci": "GitHub CI 대기가 해당 세션 곁에 표시됩니다.",
+        "showcase.complete": "검증이 끝나고 수족관이 잔잔해집니다.",
+
         "stat.agents": "공통 세션 모델",
         "stat.local": "컴퓨터에서 실행하는 허브",
         "video.download": "수족관 데모 다운로드",
@@ -558,6 +591,14 @@
         'policy.canonical': '개인정보 처리방침은 영어 원문이 정본입니다.'
       },
       ja: {
+        "showcase.h": "多彩なエージェントを、ひとつのワークスペースに",
+        "showcase.p": "Hermes Agentが水槽に参加。GitHub CIのクリーチャーはチェック待ちのセッションを周回し、完了すると離れます。",
+        "showcase.download": "1.8.0紹介動画をダウンロード",
+        "showcase.caption": "架空の作業を使い、ネイティブiPadシミュレーターで撮影したAgentDeck 1.8.0です。実際のアプリ描画による無音動画。従来の紹介動画も上に残しています。",
+        "showcase.overview": "コーディングエージェントと一緒に動くHermes Agent。",
+        "showcase.ci": "GitHub CIの待機状態を対象セッションのそばに表示。",
+        "showcase.complete": "チェックが完了し、水槽が落ち着きます。",
+
         "stat.agents": "共通セッションモデル",
         "stat.local": "コンピューター上のハブ",
         "video.download": "水槽デモをダウンロード",
