@@ -4,6 +4,8 @@
 
 # AgentDeck
 
+> 🚀 **立创·实战派 ESP32-S3 专属移植分支**：本分支已完成立创实战派开发板（ST7789 3.5寸 IPS + PCA9557 + P-MOS背光）的驱动适配，可直接查阅 [立创实战派快速上手指南](README_LICHUANG.md) 快速编译与一键烧录！
+
 <p align="center">
   <a href="https://apps.apple.com/app/id6784822497?pt=128040795&ct=github-readme-202610&mt=8"><img src="https://img.shields.io/badge/App%20Store-Mac%20%C2%B7%20iPhone%20%C2%B7%20iPad-1f6157.svg?logo=apple" alt="App Store — Mac, iPhone, and iPad"></a>
   <a href="https://play.google.com/store/apps/details?id=dev.agentdeck"><img src="https://img.shields.io/badge/Google%20Play-Android-1f6157.svg?logo=googleplay" alt="Google Play — Android"></a>

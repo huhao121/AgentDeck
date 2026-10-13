@@ -375,6 +375,65 @@ public:
     }
 };
 
+#elif defined(BOARD_LICHUANG_SZP)
+// ===== 立创·实战派 ESP32-S3: ST7789 320x240 SPI =====
+#include <Wire.h>
+
+class LGFX : public lgfx::LGFX_Device {
+public:
+    lgfx::Bus_SPI        _bus_instance;
+    lgfx::Panel_ST7789   _panel_instance;
+    lgfx::Light_PWM      _light_instance;
+
+    LGFX() {
+        // 1. SPI 总线配置
+        {
+            auto cfg = _bus_instance.config();
+            cfg.spi_host = SPI2_HOST;
+            cfg.dma_channel = 0;
+            cfg.freq_write = 40000000;
+            cfg.freq_read  = 16000000;
+            cfg.pin_sclk = BOARD_PIN_SPI_SCLK;
+            cfg.pin_mosi = BOARD_PIN_SPI_MOSI;
+            cfg.pin_miso = -1;
+            cfg.pin_dc   = BOARD_PIN_SPI_DC;
+            _bus_instance.config(cfg);
+        }
+        _panel_instance.setBus(&_bus_instance);
+
+        // 3. Panel 配置 (ST7789 240x320)
+        {
+            auto cfg = _panel_instance.config();
+            cfg.pin_cs           = -1;
+            cfg.pin_rst          = -1;
+            cfg.pin_busy         = -1;
+            cfg.panel_width      = 240;
+            cfg.panel_height     = 320;
+            cfg.offset_x         = 0;
+            cfg.offset_y         = 0;
+            cfg.offset_rotation  = 0;
+            cfg.dummy_read_bits  = 1;
+            cfg.readable         = false;
+            cfg.invert           = BOARD_INVERT;
+            cfg.rgb_order        = false;
+            _panel_instance.config(cfg);
+        }
+
+        // 4. 背光配置 (GPIO 42: 立创实战派 P-MOS 低电平点亮)
+        {
+            auto cfg = _light_instance.config();
+            cfg.pin_bl = BOARD_PIN_BL;
+            cfg.invert = true; // P-MOS: 低电平点亮
+            cfg.freq   = 12000;
+            cfg.pwm_channel = 0;
+            _light_instance.config(cfg);
+            _panel_instance.setLight(&_light_instance);
+        }
+
+        setPanel(&_panel_instance);
+    }
+};
+
 #elif defined(BOARD_IPS35)
 // ===== JC3248W535: AXS15231B QSPI =====
 // Requires Arduino_Canvas wrapper — direct QSPI writes produce black screen.
@@ -1197,6 +1256,24 @@ void hwI2cProbe(int sdaOverride, int sclOverride) {
 #endif  // BOARD_IPS10
 
 void displayInit() {
+#if defined(BOARD_LICHUANG_SZP)
+    // 立创·实战派: 初始化 PCA9557 I2C 扩展芯片，拉低 LCD_CS(IO0) 选中屏幕
+    Serial.println("[Display] Init PCA9557 for Lichuang SZP...");
+    Wire.begin(BOARD_PIN_I2C_SDA, BOARD_PIN_I2C_SCL);
+    delay(50);
+    // 配置寄存器 0x03：设置 IO0, IO1, IO2 为输出 (0xF8 即 11111000b)
+    Wire.beginTransmission(BOARD_PCA9557_ADDR);
+    Wire.write(0x03);
+    Wire.write(0xF8);
+    Wire.endTransmission();
+    // 输出寄存器 0x01：设置 IO0=0 (LCD_CS有效拉低), IO1=0, IO2=0
+    Wire.beginTransmission(BOARD_PCA9557_ADDR);
+    Wire.write(0x01);
+    Wire.write(0x00);
+    Wire.endTransmission();
+    delay(50);
+#endif
+
 #if defined(BOARD_AMOLED)
     // === ST77916 QSPI AMOLED init via Arduino_GFX ===
 
@@ -1423,6 +1500,14 @@ void displayInit() {
     // full; setBrightness() steps levels from there.
     pinMode(BOARD_PIN_BL, OUTPUT);
     digitalWrite(BOARD_PIN_BL, HIGH);
+#endif
+
+#if defined(BOARD_LICHUANG_SZP)
+    Serial.println("[Display] Setting backlight ON (LOW) for Lichuang SZP...");
+    pinMode(BOARD_PIN_BL, OUTPUT);
+    digitalWrite(BOARD_PIN_BL, LOW); // 立创实战派 P-MOS: 低电平点亮背光
+    tft.setBrightness(255);
+    tft.setRotation(1);
 #endif
 
 #if defined(BOARD_TTGO) || defined(BOARD_ESP32_C6_147)
